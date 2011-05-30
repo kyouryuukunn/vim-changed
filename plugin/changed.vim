@@ -38,7 +38,7 @@ command!  Changed       :call <SID>Changed_execute()
 command!  ChangedClear  :call <SID>Changed_clear()
 
 au! BufWritePost * Changed
-au! CursorHold   * Changed
+"au! CursorHold   * Changed
 "au! CursorHoldI  * call <SID>Changed_execute()
 " heavy
 "au! InsertLeave * call <SID>Changed_execute()
