@@ -2,12 +2,13 @@
 "
 " Description:
 "   Displays signs on changed lines.
-" Last Change: 2009-1-17
+" Last Change: 2015-3-31
 " Maintainer: Shuhei Kubota <kubota.shuhei+vim@gmail.com>
 " Requirements:
 "   * +signs (appears in :version)
 "   * diff command
 "   * setting &termencoding
+"   * vimproc
 " Installation:
 "   Just source this file. (Put this file into the plugin directory.)
 " Usage:
@@ -38,7 +39,7 @@ command!  Changed       :call <SID>Changed_execute()
 command!  ChangedClear  :call <SID>Changed_clear()
 
 au! BufWritePost * Changed
-"au! CursorHold   * Changed
+au! CursorHold   * Changed
 "au! CursorHoldI  * call <SID>Changed_execute()
 " heavy
 "au! InsertLeave * call <SID>Changed_execute()
@@ -92,12 +93,17 @@ function! s:Changed_execute()
     " get diff text
     silent execute 'write! ' . escape(changedPath, ' ')
     "echom 'diff -u "' . originalPath . '" "' . changedPath . '"'
-    let diffText = system(iconv('diff -u "' . originalPath . '" "' . changedPath . '"', &enc, tenc))
+    let diffText = vimproc#system(iconv('diff -u "' . originalPath . '" "' . changedPath . '"', &enc, tenc))
     let diffLines = split(diffText, '\n')
 
     " clear all temp files
-    call system(iconv('rm "' . changedPath . '"', &enc, tenc))
-    call system(iconv('del "' . substitute(changedPath, '/', '\', 'g') . '"', &enc, tenc))
+" clear all temp files
+    if has("win32") || has("win64")
+        call vimproc#delete_trash(substitute(changedPath, '/', '\', 'g'))
+    else
+    "vimproc can't find del comman!
+        call vimproc#system_bg(iconv('rm "' . changedPath . '"', &enc, tenc))
+    endif
 
     " list lines and their signs
     let pos = 1 " changed line number
