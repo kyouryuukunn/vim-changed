@@ -37,14 +37,16 @@
 command!  Changed       :call <SID>Changed_execute()
 command!  ChangedClear  :call <SID>Changed_clear()
 
+au! BufReadPost * Changed
 au! BufWritePost * Changed
-au! CursorHold   * Changed
-au! CursorHoldI  * call <SID>Changed_execute()
+" au! CursorHold   * Changed
+" au! CursorHoldI  * Changed
 " heavy
-" au! Inserteave * call <SID>Changed_execute()
+" au! Inserteave * Changed
 " too heavy
-"au! CursorMoved * call <SID>Changed_execute()
-" au! TextChanged * call <SID>Changed_execute()
+"au! CursorMoved * Changed
+au! TextChanged * Changed
+au! TextChangedI * Changed
 
 if !exists('g:Changed_definedSigns')
     let g:Changed_definedSigns = 1
@@ -102,9 +104,7 @@ function! s:Changed_execute()
 
     " get paths
     let originalPath = substitute(expand('%:p'), '\', '/', 'g')
-    let changedPath = substitute(tempname(), '\', '/', 'g')
-    "echom 'originalPath' . originalPath
-    "echom 'changedPath' . changedPath
+    let b:changedPath = substitute(tempname(), '\', '/', 'g')
 
     " both files are not saved -> don't diff
     if ! filereadable(originalPath) | return | endif
@@ -118,17 +118,33 @@ function! s:Changed_execute()
     if strlen(tenc) == 0 | let tenc = &enc | endif
 
     " get diff text
-    silent execute 'write! ' . escape(changedPath, ' ')
-    "echom 'diff -u "' . originalPath . '" "' . changedPath . '"'
-    let diffText = vimproc#system(iconv('diff -u "' . originalPath . '" "' . changedPath . '"', &enc, tenc))
-    let diffLines = split(diffText, '\n')
+    silent execute 'write! ' . escape(b:changedPath, ' ')
+    let g:job = job_start(
+			    \['diff', '-u', iconv(originalPath, &enc, tenc), iconv(b:changedPath, &enc, tenc)],
+			    \{'out_cb': function('g:Changed_show', [b:changedtick]),
+			    \'out_mode': 'raw'})
+endfunction
 
+" function! g:Error(ch, msg)
+" 	let g:test = a:msg
+" 	echo "error"
+" endfunction
+
+" function! g:Done(ch, msg)
+" 	let g:test = a:msg
+" 	echo 'done'
+" endfunction
+
+function! g:Changed_show(tick, ch, msg)
+
+    let b:Changed__tick = b:changedtick
+    let diffLines = split(a:msg, '\n')
     " clear all temp files
     if has("win32") || has("win64")
-        call vimproc#delete_trash(substitute(changedPath, '/', '\', 'g'))
+        call job_start(['del', substitute(b:changedPath, '/', '\', 'g')])
     else
     "vimproc can't find del comman!
-        call vimproc#system_bg(iconv('rm "' . changedPath . '"', &enc, tenc))
+        call job_start(iconv('rm', iconv(b:changedPath, &enc, tenc)))
     endif
 
     " list lines and their signs
@@ -136,11 +152,13 @@ function! s:Changed_execute()
     let changedLineNums = {} " collection of pos
     let minusLevel = 0
     for line in diffLines
-        "echom 'line: ' . line
         if line[0] == '@'
             " reset pos
             let regexp = '@@\s*-\d\+\(,\d\+\)\?\s\++\(\d\+\)\(\(,\d\+\)\|\)\s\+@@'
-            let pos = eval(substitute(line, regexp, '\2', ''))
+	    " Eval cause an error. Now, this isn't a problem, because vim
+	    " doesn't idetify strings or Integer about keys in dicts.
+            " let pos = eval(substitute(line, regexp, '\2', ''))
+            let pos = substitute(line, regexp, '\2', '')
             let minusLevel = 0
         elseif line[0] == '-' && line !~ '^---'
             let changedLineNums[pos] = 'SIGN_CHANGED_DELETED_VIM'
@@ -158,10 +176,11 @@ function! s:Changed_execute()
             let minusLevel = 0
         endif
     endfor
-    "echom 'changedLineNums: ' . join(changedLineNums, ', ')
 
     let curSignedLines = s:GetPlacedSignsDic(bufnr('%'))
 
+    " if this is already old, return
+    if b:Changed__tick != a:tick | return | endif
     " place signs
     let lastLineNum = line('$')
     for i in range(1, lastLineNum)
@@ -193,9 +212,5 @@ function! s:Changed_execute()
             endif
         endif
     endfor
-
-    let b:Changed__tick = b:changedtick
-    "echom 'bufnr: ' . bufnr('%')
-    "echom 'changedtick: ' . b:changedtick
 endfunction
 

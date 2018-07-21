@@ -1,31 +1,18 @@
-This is a mirror of http://www.vim.org/scripts/script.php?script_id=2496
+vimで変更箇所を非同期実行でサイン欄に表示するプラグイン
 
-Description:
-  Displays signs on changed lines.
-Requirements:
-  * +signs (appears in :version)
-  * diff command
-  * setting &termencoding
-Usage:
-  [Settings]
-                                                                                                         
-  1. Setting &termencoding
-      Set &termencoding option according to your terminal encoding. 
-      Its default value is same as &encoding.
-      example:
-          set termencoding=cp932
-                                                                                                         
-  2. Changing signs
-      To change signs, re-define signs after sourcing this script.
-      example (changing text):
-          sign define SIGN_CHANGED_DELETED_VIM text=D texthl=ChangedDefaultHl
-          sign define SIGN_CHANGED_ADDED_VIM   text=A texthl=ChangedDefaultHl
-          sign define SIGN_CHANGED_VIM         text=M texthl=ChangedDefaultHl
-      example (changin highlight @gvimrc):
-          highlight ChangedDefaultHl cterm=bold ctermbg=red ctermfg=white gui=bold guibg=red guifg=white
-                                                                                                         
-  [Usual]
-                                                                                                         
-  Edit a buffer and wait seconds or execute :Changed.
-  Then signs appear on changed lines.
 
+以下二つを参考に高速化と気になる点を修正したもの
+http://www.vim.org/scripts/script.php?script_id=2496
+https://github.com/leftouterjoin/changed
+
+vim8.0で追加されたJobとコールバック機能を使用し、非同期実行で変更箇所をsign欄に
+表示するようにしたもの。さらに既に新しいコールバックが呼ばれていたら古いコール
+バックを停止するようにした結果TextChanged, TextChangedIで実行してもほぼ速度に影
+響しなくなった。
+
+また、自分がマークしたサインを記憶し、それらのみを削除するようして他のサインを
+使用する機能と共存可能にした。ただし、サインの管理を辞書でしているため、変更箇
+所が辞書で管理できるキー数を超えると、正常に表示できなくなる。
+
+辞書のキー数に制限があったとは...
+解決策募集中
