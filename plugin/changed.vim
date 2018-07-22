@@ -212,7 +212,7 @@ function! g:Changed_show(tick, ch, msg)
                 endfor
             endif
             if ! isSigned
-                let b:signId = exists('b:signId') ? b:signId+1 : 1
+                let b:signId = exists('b:signId') ? b:signId+1 : 30999
                 execute 'sign place ' . b:signId . ' line=' . i . ' name=' . newName . ' buffer=' . bufnr('%')
             endif
         else
