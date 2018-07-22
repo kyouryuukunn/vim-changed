@@ -62,7 +62,7 @@ endif
 
 function! s:Changed_clear()
     if exists('b:signId')
-	let i = 1
+	let i = 30999
         while b:signId >= i
             execute 'sign unplace ' . i . ' buffer=' . bufnr('%')
 	    let i = i + 1
