@@ -37,7 +37,7 @@
 command!  Changed       :call <SID>Changed_execute()
 command!  ChangedClear  :call <SID>Changed_clear()
 
-au! BufReadPost * Changed
+" au! BufReadPost * Changed
 au! BufWritePost * Changed
 " au! CursorHold   * Changed
 " au! CursorHoldI  * Changed
@@ -69,6 +69,17 @@ function! s:Changed_clear()
         endwhile
     endif
     if exists('b:signId') | unlet b:signId | endif
+
+    " かえって重くなった
+    " let bufinfo = getbufinfo(bufnr('%'))
+    " if len(bufinfo) == 1 && has_key(bufinfo[0], "signs")
+	"     for sign in bufinfo[0].signs
+	" 	    if len(sign.name) >= 12 && sign.name[0:11] == 'SIGN_CHANGED'
+	" 		    execute 'sign unplace ' . sign.id . ' buffer=' . bufnr('%')
+	" 	    endif
+	"     endfor
+    " endif
+    " 
 endfunction
 
 function! s:GetPlacedSignsDic(buffer)
@@ -147,6 +158,8 @@ function! g:Changed_show(tick, ch, msg)
         call job_start(iconv('rm', iconv(b:changedPath, &enc, tenc)))
     endif
 
+    " if this is already old, return
+    if b:Changed__tick != a:tick | return | endif
     " list lines and their signs
     let pos = 1 " changed line number
     let changedLineNums = {} " collection of pos
