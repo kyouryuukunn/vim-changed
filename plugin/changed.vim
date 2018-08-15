@@ -2,7 +2,7 @@
 "
 " Description:
 "   Displays signs on changed lines.
-" Last Change: 2009-1-17
+" Last Change: 2018-8-15
 " Maintainer: Shuhei Kubota <kubota.shuhei+vim@gmail.com>
 " Requirements:
 "   * +signs (appears in :version)
@@ -37,7 +37,7 @@
 command!  Changed       :call <SID>Changed_execute()
 command!  ChangedClear  :call <SID>Changed_clear()
 
-" au! BufReadPost * Changed
+au! BufReadPost * Changed
 au! BufWritePost * Changed
 " au! CursorHold   * Changed
 " au! CursorHoldI  * Changed
@@ -47,6 +47,8 @@ au! BufWritePost * Changed
 "au! CursorMoved * Changed
 au! TextChanged * Changed
 au! TextChangedI * Changed
+
+let s:STARTID=30999
 
 if !exists('g:Changed_definedSigns')
     let g:Changed_definedSigns = 1
@@ -62,7 +64,7 @@ endif
 
 function! s:Changed_clear()
     if exists('b:signId')
-	let i = 30999
+	let i = s:STARTID
         while b:signId >= i
             execute 'sign unplace ' . i . ' buffer=' . bufnr('%')
 	    let i = i + 1
@@ -79,7 +81,6 @@ function! s:Changed_clear()
 	" 	    endif
 	"     endfor
     " endif
-    " 
 endfunction
 
 function! s:GetPlacedSignsDic(buffer)
@@ -106,9 +107,8 @@ function! s:GetPlacedSignsDic(buffer)
 endfunction
 
 function! s:Changed_execute()
-    if exists('b:Changed__tick') && b:Changed__tick == b:changedtick | return | endif
 
-    if ! &modified
+    if !&modified
         call s:Changed_clear()
         return
     endif
@@ -128,38 +128,45 @@ function! s:Changed_execute()
     endif
     if strlen(tenc) == 0 | let tenc = &enc | endif
 
-    " get diff text
+    " get diff text (0.01ms)
     silent execute 'write! ' . escape(b:changedPath, ' ')
-    let g:job = job_start(
-			    \['diff', '-u', iconv(originalPath, &enc, tenc), iconv(b:changedPath, &enc, tenc)],
-			    \{'out_cb': function('g:Changed_show', [b:changedtick]),
-			    \'out_mode': 'raw'})
+    if exists('b:job') && job_status(b:job) == 'run'
+	    call job_stop(b:job)
+    endif
+    let b:job = job_start(
+        \['diff', '-u', iconv(originalPath, &enc, tenc), iconv(b:changedPath, &enc, tenc)],
+        \{'out_cb': 'g:Changed_show', 'err_cb':'g:Error',
+        \'out_mode': 'raw'})
 endfunction
 
-" function! g:Error(ch, msg)
-" 	let g:test = a:msg
-" 	echo "error"
-" endfunction
+function! g:Chaned_Error(ch, msg)
+	echo a:msg
+endfunction
 
 " function! g:Done(ch, msg)
 " 	let g:test = a:msg
 " 	echo 'done'
 " endfunction
 
-function! g:Changed_show(tick, ch, msg)
+function! g:Changed_show(ch, msg)
+    let g:test=a:msg
 
-    let b:Changed__tick = b:changedtick
     let diffLines = split(a:msg, '\n')
+    " change encodings of paths (enc -> tenc)
+    if exists('&tenc')
+        let tenc = &tenc
+    else
+        let tenc = ''
+    endif
+    if strlen(tenc) == 0 | let tenc = &enc | endif
     " clear all temp files
     if has("win32") || has("win64")
-        call job_start(['del', substitute(b:changedPath, '/', '\', 'g')])
+        call job_start(['del', substitute(iconv(b:changedPath, &enc, tenc), '/', '\', 'g')])
     else
     "vimproc can't find del comman!
         call job_start(iconv('rm', iconv(b:changedPath, &enc, tenc)))
     endif
 
-    " if this is already old, return
-    if b:Changed__tick != a:tick | return | endif
     " list lines and their signs
     let pos = 1 " changed line number
     let changedLineNums = {} " collection of pos
@@ -192,38 +199,34 @@ function! g:Changed_show(tick, ch, msg)
 
     let curSignedLines = s:GetPlacedSignsDic(bufnr('%'))
 
-    " if this is already old, return
-    if b:Changed__tick != a:tick | return | endif
     " place signs
-    let lastLineNum = line('$')
-    for i in range(1, lastLineNum)
-        if has_key(changedLineNums, i)
-            let newName = changedLineNums[i]
-            let isSigned = 0
-            if has_key(curSignedLines, i)
-                let oldSignsDic = curSignedLines[i]
-                let oldIdList = keys(oldSignsDic)
-                for j in oldIdList
-                    if oldSignsDic[j] == newName
-                         unlet isSigned | let isSigned = 1
-                    else
-                         execute 'sign unplace ' . j . ' buffer=' . bufnr('%')
-                    endif
-                endfor
-            endif
-            if ! isSigned
-                let b:signId = exists('b:signId') ? b:signId+1 : 30999
-                execute 'sign place ' . b:signId . ' line=' . i . ' name=' . newName . ' buffer=' . bufnr('%')
-            endif
-        else
-            if has_key(curSignedLines, i)
-                let oldSignsDic = curSignedLines[i]
-                let oldIdList = keys(oldSignsDic)
-                for j in oldIdList
-                    execute 'sign unplace ' . j . ' buffer=' . bufnr('%')
-                endfor
-            endif
+    for i in keys(changedLineNums)
+	let newName = changedLineNums[i]
+	let isSigned = 0
+	if has_key(curSignedLines, i)
+	    let oldSignsDic = curSignedLines[i]
+	    let oldIdList = keys(oldSignsDic)
+	    for j in oldIdList
+	        if oldSignsDic[j] == newName
+	    	 unlet isSigned | let isSigned = 1
+	        else
+	    	 execute 'sign unplace ' . j . ' buffer=' . bufnr('%')
+	        endif
+	    endfor
+	endif
+	if ! isSigned
+	    let b:signId = exists('b:signId') ? b:signId+1 : s:STARTID
+	    execute 'sign place ' . b:signId . ' line=' . i . ' name=' . newName . ' buffer=' . bufnr('%')
+	endif
+    endfor
+
+    for i in keys(curSignedLines)
+        if !has_key(changedLineNums, i)
+            let oldSignsDic = curSignedLines[i]
+            let oldIdList = keys(oldSignsDic)
+            for j in oldIdList
+                execute 'sign unplace ' . j . ' buffer=' . bufnr('%')
+            endfor
         endif
     endfor
 endfunction
-
