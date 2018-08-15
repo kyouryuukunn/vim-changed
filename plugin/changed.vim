@@ -135,21 +135,20 @@ function! s:Changed_execute()
     endif
     let b:job = job_start(
         \['diff', '-u', iconv(originalPath, &enc, tenc), iconv(b:changedPath, &enc, tenc)],
-        \{'out_cb': 'g:Changed_show', 'err_cb':'g:Error',
+        \{'out_cb': 'g:Changed_show',
         \'out_mode': 'raw'})
 endfunction
 
-function! g:Chaned_Error(ch, msg)
-	echo a:msg
-endfunction
-
+" function! g:Chaned_Error(ch, msg)
+" 	echo a:msg
+" endfunction
+"
 " function! g:Done(ch, msg)
 " 	let g:test = a:msg
 " 	echo 'done'
 " endfunction
 
 function! g:Changed_show(ch, msg)
-    let g:test=a:msg
 
     let diffLines = split(a:msg, '\n')
     " change encodings of paths (enc -> tenc)
@@ -163,7 +162,6 @@ function! g:Changed_show(ch, msg)
     if has("win32") || has("win64")
         call job_start(['del', substitute(iconv(b:changedPath, &enc, tenc), '/', '\', 'g')])
     else
-    "vimproc can't find del comman!
         call job_start(iconv('rm', iconv(b:changedPath, &enc, tenc)))
     endif
 
