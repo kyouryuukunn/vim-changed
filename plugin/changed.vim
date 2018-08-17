@@ -71,16 +71,6 @@ function! s:Changed_clear()
         endwhile
     endif
     if exists('b:signId') | unlet b:signId | endif
-
-    " かえって重くなった
-    " let bufinfo = getbufinfo(bufnr('%'))
-    " if len(bufinfo) == 1 && has_key(bufinfo[0], "signs")
-	"     for sign in bufinfo[0].signs
-	" 	    if len(sign.name) >= 12 && sign.name[0:11] == 'SIGN_CHANGED'
-	" 		    execute 'sign unplace ' . sign.id . ' buffer=' . bufnr('%')
-	" 	    endif
-	"     endfor
-    " endif
 endfunction
 
 function! s:GetPlacedSignsDic(buffer)
@@ -135,8 +125,9 @@ function! s:Changed_execute()
     endif
     let b:job = job_start(
         \['diff', '-u', iconv(originalPath, &enc, tenc), iconv(b:changedPath, &enc, tenc)],
-        \{'out_cb': 'g:Changed_show',
+        \{'close_cb': 'g:Changed_show',
         \'out_mode': 'raw'})
+    " let diffResult = vimproc#system(['diff', '-u', iconv(originalPath, &enc, tenc), iconv(b:changedPath, &enc, tenc)])
 endfunction
 
 " function! g:Chaned_Error(ch, msg)
@@ -148,9 +139,13 @@ endfunction
 " 	echo 'done'
 " endfunction
 
-function! g:Changed_show(ch, msg)
+function! g:Changed_show(ch)
 
-    let diffLines = split(a:msg, '\n')
+    if ch_status(a:ch, {'part': 'out'}) == 'buffered'
+        let diffLines = split(ch_read(a:ch), '\n')
+    else
+        return
+    endif
     " change encodings of paths (enc -> tenc)
     if exists('&tenc')
         let tenc = &tenc

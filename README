@@ -1,11 +1,12 @@
-vimで変更箇所をサイン欄に表示するプラグイン
+vim-changed
+vimで変更箇所をサイン欄に表示するプラグインで、以下二つを参考に高速化とともに、
+気になる点を修正したものです。
+
+http://www.vim.org/scripts/script.php?script_id=2496
+https://github.com/leftouterjoin/changed
 
 required:
 vim8.0
-
-以下二つを参考に高速化と気になる点を修正したもの
-http://www.vim.org/scripts/script.php?script_id=2496
-https://github.com/leftouterjoin/changed
 
 元のchanged.vimとの変更点は:
 *コードのチューニングとdiffの非同期実行でTextChanged, TextChangedIで実行してもほぼ速度に影響しないようにした
@@ -14,4 +15,5 @@ https://github.com/leftouterjoin/changed
 既知の不具合
 変更箇所が一定数を超えるとサインが正常に表示できなくなる
 これはvimのjob自体の問題のようで、jobから受け取れる文字数に制限がある模様
-いまのところ対処不能
+->文字数ではなく処理時間で、一定時間で、出力結果を区切ってしまう模様
+->close_cbの使用で回避できました
