@@ -1,7 +1,9 @@
 vim-changed
 vimで変更箇所をサイン欄に表示するプラグインで、以下二つを参考に高速化とともに、
 気になる点を修正したものです。
+
 ![result](https://dl.dropboxusercontent.com/s/1b05w1i4gtjc03l/vim-changed.gif)
+
 http://www.vim.org/scripts/script.php?script_id=2496
 https://github.com/leftouterjoin/changed
 
