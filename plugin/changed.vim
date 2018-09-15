@@ -139,7 +139,7 @@ endfunction
 " 	echo 'done'
 " endfunction
 
-function! g:Changed_show(ch)
+function! g:Changed_show(ch) abort
 
     if ch_status(a:ch, {'part': 'out'}) == 'buffered'
         let diffLines = split(ch_read(a:ch), '\n')
