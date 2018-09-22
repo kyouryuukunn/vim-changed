@@ -1,21 +1,44 @@
 vim-changed
-vimで変更箇所をサイン欄に表示するプラグインで、以下二つを参考に高速化とともに、
-気になる点を修正したものです。
 
-![result](https://dl.dropboxusercontent.com/s/1b05w1i4gtjc03l/vim-changed.gif)
+Requirements:
+  * vim8.1 or more
+  * +signs (appears in :version)
+  * +job (appears in :version)
+  * +timers (appears in :version)
+  * diff command
+  * setting &termencoding
 
-http://www.vim.org/scripts/script.php?script_id=2496
-https://github.com/leftouterjoin/changed
+Installation:
+  Just source this file. (Put this file into the plugin directory.)
 
-required:
-vim8.0
+Usage:
+  [Settings]
+   1. augroup vim-changed
+     	autocmd!
+     	au BufReadPost  * Changed
+     	au BufWritePost * Changed
+     	au TextChanged  * ChangedTimerSet
+     	au TextChangedI * ChangedTimerSet
+     augroup END
+     " Changed is executed g:changed_delay ms after the last change
+     let g:changed_delay = 500
 
-元のchanged.vimとの変更点は:
-*コードのチューニングとdiffの非同期実行でTextChanged, TextChangedIで実行してもほぼ速度に影響しないようにした
-*他のサインを使用する機能と共存可能にした
+  2. Setting &termencoding
+      Set &termencoding option according to your terminal encoding. 
+      Its default value is same as &encoding.
+      example:
+          set termencoding=cp932
 
-既知の不具合
-変更箇所が一定数を超えるとサインが正常に表示できなくなる
-これはvimのjob自体の問題のようで、jobから受け取れる文字数に制限がある模様
-->文字数ではなく処理時間で、一定時間で、出力結果を区切ってしまう模様
-->close_cbの使用で回避できました
+  3. Changing signs
+      To change signs, re-define signs after sourcing this script.
+      example (changing text):
+          sign define SIGN_CHANGED_DELETED_VIM text=D texthl=ChangedDefaultHl
+          sign define SIGN_CHANGED_ADDED_VIM   text=A texthl=ChangedDefaultHl
+          sign define SIGN_CHANGED_VIM         text=M texthl=ChangedDefaultHl
+      example (changin highlight @gvimrc):
+          highlight ChangedDefaultHl cterm=bold ctermbg=red ctermfg=white gui=bold guibg=red guifg=white
+
+  [Usual]
+
+  Edit a buffer and wait seconds or execute :Changed.
+  Then signs appear on changed lines.
