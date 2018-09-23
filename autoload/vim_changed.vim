@@ -35,7 +35,11 @@ function! s:GetPlacedSignsDic(buffer)
 endfunction
 
 function! vim_changed#Changed_timerset() abort
-    call timer_start(g:changed_delay, function('vim_changed#Changed_execute', [b:changedtick]))
+    if exists('s:timer')
+        call timer_stop(s:timer)
+        unlet s:timer
+    endif
+    let s:timer = timer_start(g:changed_delay, function('vim_changed#Changed_execute', [b:changedtick]))
 endfunction
 
 function! vim_changed#Changed_execute(...)
@@ -45,8 +49,6 @@ function! vim_changed#Changed_execute(...)
      if exists('b:completed_changedtick') && b:completed_changedtick == l:changedtick
             return
      endif
-    " not the latest change
-    if b:changedtick > l:changedtick | return | endif
 
     if !&modified
         call vim_changed#Changed_clear()
@@ -73,7 +75,7 @@ function! vim_changed#Changed_execute(...)
     let b:completed_changedtick = l:changedtick
     let b:job = job_start(
         \['diff', '-u', iconv(originalPath, &enc, tenc), iconv(b:changedPath, &enc, tenc)],
-        \{'close_cb': 'g:Changed_show',
+        \{'close_cb': function('g:Changed_show', [l:changedtick, bufnr('%')]),
         \'out_mode': 'raw'})
     " let diffResult = vimproc#system(['diff', '-u', iconv(originalPath, &enc, tenc), iconv(b:changedPath, &enc, tenc)])
 endfunction
@@ -87,13 +89,18 @@ endfunction
 " 	echo 'done'
 " endfunction
 
-function! g:Changed_show(ch) abort
+function! g:Changed_show(changedtick, bufnr, ch) abort
 
+    " not the latest change
+    if b:changedtick > a:changedtick || a:bufnr != bufnr('%')
+        return
+    endif
     if ch_status(a:ch, {'part': 'out'}) == 'buffered'
         let diffLines = split(ch_read(a:ch), '\n')
     else
         return
     endif
+
     " change encodings of paths (enc -> tenc)
     if exists('&tenc')
         let tenc = &tenc
