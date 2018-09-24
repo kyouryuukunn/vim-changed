@@ -46,9 +46,14 @@ function! vim_changed#Changed_execute(...)
     let l:changedtick = get(a:, 1, b:changedtick)
 
     " not changed from the last called this function
-     if exists('b:completed_changedtick') && b:completed_changedtick == l:changedtick
-            return
-     endif
+    if exists('b:completed_changedtick') && b:completed_changedtick == l:changedtick
+        return
+    endif
+
+    if mode() == 's'
+	return
+    endif
+
 
     if !&modified
         call vim_changed#Changed_clear()
