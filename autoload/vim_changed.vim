@@ -52,6 +52,8 @@ function! vim_changed#Changed_execute(...)
 
     if mode() == 's'
 	return
+    elseif exists('g:loaded_neosnippet') && (neosnippet#jumpable() || neosnippet#expandable())
+	return
     endif
 
 
