@@ -2,10 +2,10 @@ let s:STARTID=30999
 
 function! vim_changed#Changed_clear()
     if exists('b:signId')
-	let i = s:STARTID
+    let i = s:STARTID
         while b:signId >= i
             execute 'sign unplace ' . i . ' buffer=' . bufnr('%')
-	    let i = i + 1
+        let i = i + 1
         endwhile
     endif
     if exists('b:signId') | unlet b:signId | endif
@@ -88,12 +88,12 @@ function! vim_changed#Changed_execute(...)
 endfunction
 
 " function! g:Chaned_Error(ch, msg)
-" 	echo a:msg
+"     echo a:msg
 " endfunction
 "
 " function! g:Done(ch, msg)
-" 	let g:test = a:msg
-" 	echo 'done'
+"     let g:test = a:msg
+"     echo 'done'
 " endfunction
 
 function! g:Changed_show(changedtick, bufnr, ch) abort
@@ -130,8 +130,8 @@ function! g:Changed_show(changedtick, bufnr, ch) abort
         if line[0] == '@'
             " reset pos
             let regexp = '@@\s*-\d\+\(,\d\+\)\?\s\++\(\d\+\)\(\(,\d\+\)\|\)\s\+@@'
-	    " Eval cause an error. Now, this isn't a problem, because vim
-	    " doesn't idetify strings or Integer about keys in dicts.
+        " Eval cause an error. Now, this isn't a problem, because vim
+        " doesn't idetify strings or Integer about keys in dicts.
             " let pos = eval(substitute(line, regexp, '\2', ''))
             let pos = substitute(line, regexp, '\2', '')
             let minusLevel = 0
@@ -162,16 +162,18 @@ function! g:Changed_show(changedtick, bufnr, ch) abort
 	    let oldSignsDic = curSignedLines[i]
 	    let oldIdList = keys(oldSignsDic)
 	    for j in oldIdList
-	        if oldSignsDic[j] == newName
-	    	 unlet isSigned | let isSigned = 1
-	        else
-	    	 execute 'sign unplace ' . j . ' buffer=' . bufnr('%')
-	        endif
+		if oldSignsDic[j] == newName
+		    let isSigned = 1
+		else
+		    execute 'sign unplace ' . j . ' buffer=' . bufnr('%')
+		endif
 	    endfor
 	endif
 	if ! isSigned
 	    let b:signId = exists('b:signId') ? b:signId+1 : s:STARTID
-	    execute 'sign place ' . b:signId . ' line=' . i . ' name=' . newName . ' buffer=' . bufnr('%')
+	    if i != 0
+		execute 'sign place ' . b:signId . ' line=' . i . ' name=' . newName . ' buffer=' . bufnr('%')
+	    endif
 	endif
     endfor
 
@@ -180,7 +182,7 @@ function! g:Changed_show(changedtick, bufnr, ch) abort
             let oldSignsDic = curSignedLines[i]
             let oldIdList = keys(oldSignsDic)
             for j in oldIdList
-                execute 'sign unplace ' . j . ' buffer=' . bufnr('%')
+		execute 'sign unplace ' . j . ' buffer=' . bufnr('%')
             endfor
         endif
     endfor
