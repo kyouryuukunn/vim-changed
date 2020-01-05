@@ -172,7 +172,7 @@ function! g:Changed_show(changedtick, bufnr, ch) abort
 	if ! isSigned
 	    let b:signId = exists('b:signId') ? b:signId+1 : s:STARTID
 	    if i != 0
-		execute 'sign place ' . b:signId . ' line=' . i . ' name=' . newName . ' buffer=' . bufnr('%')
+		execute 'sign place ' . b:signId . ' line=' . i . ' name=' . newName . ' priority=' . g:changed_sign_priority . ' buffer=' . bufnr('%')
 	    endif
 	endif
     endfor

@@ -1,4 +1,5 @@
 vim-changed
+Show changed line Asynchronously.
 
 Requirements:
   * vim8.1 or more
@@ -22,6 +23,10 @@ Usage:
      augroup END
      " Changed is executed g:changed_delay ms after the last change
      let g:changed_delay = 500
+     " Show sign line always.
+     set signcolumn=yes
+     " Set sign priority
+     let g:changed_sign_priority = 9
 
   2. Setting &termencoding
       Set &termencoding option according to your terminal encoding. 

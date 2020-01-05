@@ -55,6 +55,7 @@ command ChangedTimerSet :call vim_changed#Changed_timerset()
 command ChangedClear    :call vim_changed#Changed_clear()
 
 let g:changed_delay = get(g:, 'changed_delay', 100)
+let g:changed_sign_priority = get(g:, 'changed_sign_priority', 9)
 
 if !exists('g:Changed_definedSigns')
     let g:Changed_definedSigns = 1
